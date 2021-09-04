@@ -190,6 +190,24 @@ X_train_total = df_train.drop(["Customer","TravelInsurance"], axis=1)
 Y_train_total = df_train["TravelInsurance"]
 
 # %% [markdown]
+# ### Variable explicativa: Family Members
+# %%
+df_train.columns
+# %%
+plt.figure(figsize=(10,8))
+sns.histplot(data=df_train, x="FamilyMembers", hue= 'TravelInsurance', multiple="stack")
+# %% [markdown]
+# ### Variable explicativa: Chronic Diseases
+# %% 
+plt.figure(figsize=(10,8))
+ax= sns.countplot(data= df_train, x="ChronicDiseases", hue= "TravelInsurance")
+legend_labels, _= ax.get_legend_handles_labels()
+ax.legend(legend_labels, ['Not buyed', 'Buyed'], #ver de cambiar!
+          title_fontsize = 18,
+          fontsize = 15,
+          bbox_to_anchor=(1,1), 
+          title='Travel Insurance')
+# %% [markdown]
 # ## Encoding variables
 
 # %% tags=[]
