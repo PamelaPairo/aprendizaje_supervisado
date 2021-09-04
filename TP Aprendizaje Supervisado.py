@@ -27,10 +27,9 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report, confusion_matrix, plot_confusion_matrix
+from sklearn.metrics import accuracy_score, classification_report
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split, GridSearchCV
 
 # %% [markdown]
 # ## Lectura del dataset
@@ -200,8 +199,6 @@ sns.countplot(data=df_train, x="TravelInsurance", hue=df_train.EverTravelledAbro
 
 pd.crosstab(df_train["TravelInsurance"], df_train["EverTravelledAbroad"])
 # %% [markdown]
-# ## Encoding variables
-# %% [markdown]
 # ## Creación del train y validation
 # Para el entrenamiento de los modelos no utilizaremos las variable Customer y
 # Travel Insurance (Target)
@@ -219,7 +216,8 @@ X_test = df_test.drop("Customer", axis=1)
 # %% [markdown]
 # ## Modelos propuestos
 # %% [markdown]
-# ## Primer modelo de prueba: Regresión Logística
+# ### Regresión Logística: Default
+# %%
 numerical_cols = X_train_total.select_dtypes(
     include=['float64', 'int64']).columns
 
@@ -234,15 +232,14 @@ preprocessor = ColumnTransformer(
 
 pipe_lgr = Pipeline([
     ("preprocessor", preprocessor),
-    ("model", LogisticRegression(random_state=seed))
+    ("lgr", LogisticRegression(random_state=seed))
 ])
 pipe_lgr.fit(X_train, y_train)
 # %%
-# %%
-pipe_lgr["model"].classes_
+pipe_lgr["lgr"].classes_
 
 # %%
-pipe_lgr["model"].get_params()
+pipe_lgr["lgr"].get_params()
 
 # %%
 y_train_pred_lreg = pipe_lgr.predict(X_train)
@@ -262,7 +259,40 @@ print(len(text)*"=")
 print(text)
 print(len(text)*"=")
 print(classification_report(y_valid, y_val_pred_lreg))
+# %% [markdown]
+# ### Regresión Logística: Busqueda de hiperparámetros
+# %%
+params_lreg = {
+    "lgr__penalty": ["l1", "l2"],
+    "lgr__class_weight": ["balanced"],
+    "lgr__solver": ["liblinear", "saga"],
+    "lgr__max_iter": [5000]
+}
 
+clf = GridSearchCV(pipe_lgr, param_grid=params_lreg, scoring="f1")
+clf.fit(X_train, y_train)
+# %%
+clf.best_params_
+# %%
+clf.best_estimator_
+# %%
+y_train_pred_lreg = clf.best_estimator_.predict(X_train)
+y_val_pred_lreg = clf.best_estimator_.predict(X_valid)
+y_test_pred_lreg = clf.best_estimator_.predict(X_test)
+
+# %%
+text = "Logistic Regression - Reporte de clasificación del conjunto de train"
+print(len(text)*"=")
+print(text)
+print(len(text)*"=")
+print(classification_report(y_train, y_train_pred_lreg))
+
+# %%
+text = "Logistic Regression - Reporte de clasificación del conjunto de validation"
+print(len(text)*"=")
+print(text)
+print(len(text)*"=")
+print(classification_report(y_valid, y_val_pred_lreg))
 # %% [markdown]
 # ## Segundo modelo de prueba: Árbol de decisión
 
@@ -281,3 +311,6 @@ train_acc = accuracy_score(y_train, y_train_pred_dtree)
 valid_acc = accuracy_score(y_valid, y_valid_pred_dtree)
 print(f'Train accuracy: {train_acc:0.2}')
 print(f'Val accuracy: {valid_acc:0.2}')
+# %% [markdown]
+# 
+# %%
