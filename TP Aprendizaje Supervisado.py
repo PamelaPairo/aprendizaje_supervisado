@@ -71,46 +71,34 @@ fig = plt.figure(figsize=(5,5))
 sns.countplot(data=df_train, x="TravelInsurance")
 
 # %% [markdown]
-# ### Correlación variables 
+# ### Correlación variables
 
 # %%
-corr = df_train.corr().round(2)
+corr = df_train[["AnnualIncome", "Age"]].corr().round(2)
 corr = corr[['TravelInsurance']]
 corr.loc[:, 'abs_corr'] = np.abs(corr['TravelInsurance'])
 corr.sort_values(by='abs_corr', ascending=False)
-
 # %%
 plt.figure(figsize=(10,10))
 corr = df_train.corr()
 sns.heatmap(corr, xticklabels = corr.columns, yticklabels = corr.columns, annot=True, cmap= 'coolwarm')
 plt.show()
-
 # %% [markdown]
 # ### Variable explicativa: Age
 
 # %% [markdown]
-# En primer lugar, observamos la distribución de la variable Age en el df_train. 
-
+# En primer lugar, observamos la distribución de la variable Age en el df_train.
 # %%
-fig = plt.figure(figsize=(8,8))
-sns.boxenplot(data=df_train, x="Age")
-
-# %%
-fig = plt.figure(figsize=(8,8))
-sns.boxenplot(data=df_train, x="TravelInsurance", y="Age")
-
+sns.countplot(data=df_train, x="Age", hue="TravelInsurance")
 # %%
 df_train[["TravelInsurance", "Age"]].groupby("TravelInsurance").describe()
-
 # %% [markdown]
-# Si bien la distribución de Age se encuentra contenida en el mismo rango de valores para ambas clases de la variable target (idénticos valores mínimos y máximos), podemos observar que la distribución del rango intercuartil sí se ve afectada. 
-# Podemos decir que Age es una variable que puede explicar en cierta medida a la variable objetivo. 
-
+# Podemos observar que se encuentran fluctuaciones con respecto a la edad.
 # %% [markdown]
 # ### Variable explicativa: AnnualIncome
 
 # %% [markdown]
-# En primer lugar, observamos la distribución de la variable Annual Income en el df_train. 
+# En primer lugar, observamos la distribución de la variable Annual Income en el df_train.
 
 # %%
 fig = plt.figure(figsize=(8,8))
@@ -128,42 +116,34 @@ plt.ticklabel_format(style='plain', axis='y')
         .groupby(["TravelInsurance"])
         .describe()
 )
-
-
 # %% [markdown]
-# Podemos observar que la distribución de la variable Annual Income se ve afectada en gran medida, al condicionarla por las distintas clases de la variable TARGET. Si bien los valores mínimos y máximos son similares, la media y la mediana difieren considerablemente, como así también el rango intercuantil. 
-# Es una varible que se considera importante para explicar el comportamiento de Y. 
+# Podemos observar que la distribución de la variable Annual Income se ve afectada en gran medida, al condicionarla por las distintas clases de la variable TARGET. Si bien los valores mínimos y máximos son similares, la media y la mediana difieren considerablemente, como así también el rango intercuantil.
+# Es una varible que se considera importante para explicar el comportamiento de Y.
 
 # %% [markdown]
 # ### Variable explicativa: Employment Type
-
 # %%
 df_train["Employment Type"].value_counts()
+pd.crosstab(df_train["TravelInsurance"], df_train["GraduateOrNot"])
+# %%
+fig = plt.figure(figsize=(5, 5))
+sns.countplot(data=df_train,
+              x="TravelInsurance",
+              hue=df_train["Employment Type"])
+pd.crosstab(df_train["TravelInsurance"], df_train["Employment Type"])
 
 # %% [markdown]
 # ### Variable explicativa: Graduate Or Not
 
 # %%
 df_train["GraduateOrNot"].value_counts()
-
 # %%
-(
-    df_train[["TravelInsurance", "Employment Type", "GraduateOrNot", "Customer"]]
-        .groupby(["TravelInsurance", "Employment Type", "GraduateOrNot"])
-        .agg(
-            nof_customers=("Customer", "count"),
-            percentage=("Customer", lambda group: len(group) / len(df_train))
-        )
-)
-
-# %%
-pd.crosstab(df_train["TravelInsurance"], df_train["Employment Type"])
-
+fig = plt.figure(figsize=(5, 5))
+sns.countplot(data=df_train,
+              x="TravelInsurance",
+              hue=df_train["GraduateOrNot"])
 # %%
 df_train
-
-# %%
-
 # %% [markdown]
 # ### Variable explicativa: Frequent Flyer
 
@@ -198,15 +178,33 @@ plt.figure(figsize=(10,8))
 sns.histplot(data=df_train, x="FamilyMembers", hue= 'TravelInsurance', multiple="stack")
 # %% [markdown]
 # ### Variable explicativa: Chronic Diseases
-# %% 
+# %%
 plt.figure(figsize=(10,8))
 ax= sns.countplot(data= df_train, x="ChronicDiseases", hue= "TravelInsurance")
 legend_labels, _= ax.get_legend_handles_labels()
 ax.legend(legend_labels, ['Not buyed', 'Buyed'], #ver de cambiar!
           title_fontsize = 18,
           fontsize = 15,
-          bbox_to_anchor=(1,1), 
+          bbox_to_anchor=(1,1),
           title='Travel Insurance')
+# %% [markdown]
+# ### Variable explicativa: FrequentFlyer
+# %%
+fig = plt.figure(figsize=(5,5))
+sns.countplot(data=df_train, x="TravelInsurance", hue=df_train.FrequentFlyer)
+
+pd.crosstab(df_train["TravelInsurance"], df_train["FrequentFlyer"])
+# %% [markdown]
+# Se puede observar en este gráfico que si no sos viajero frecuente la cantidad
+# de clientes que contratan un seguro es baja, caso contrario la cantidad de
+# contratar un seguro es pareja.
+# %% [markdown]
+# ### Variable explicativa: EverTravelledAbroad
+# %%
+fig = plt.figure(figsize=(5, 5))
+sns.countplot(data=df_train, x="TravelInsurance", hue=df_train.EverTravelledAbroad)
+
+pd.crosstab(df_train["TravelInsurance"], df_train["EverTravelledAbroad"])
 # %% [markdown]
 # ## Encoding variables
 
@@ -253,8 +251,6 @@ X_train, X_valid, Y_train, Y_valid = train_test_split(X_train_total,
                                                       Y_train_total,
                                                       test_size=0.2,
                                                       random_state=0)
-
-
 # %% [markdown]
 # ## Modelos propuestos
 
@@ -280,14 +276,14 @@ Y_train_predic_lreg = pipe.predict(X_train)
 Y_val_pred_lreg = pipe.predict(X_valid)
 
 # %%
-text = "Logistic Regression - Reporte de clasificación del conjunto de train" 
+text = "Logistic Regression - Reporte de clasificación del conjunto de train"
 print(len(text)*"=")
 print(text)
 print(len(text)*"=")
 print(classification_report(Y_train, Y_train_predic_lreg))
 
 # %%
-text = "Logistic Regression - Reporte de clasificación del conjunto de validation" 
+text = "Logistic Regression - Reporte de clasificación del conjunto de validation"
 print(len(text)*"=")
 print(text)
 print(len(text)*"=")
