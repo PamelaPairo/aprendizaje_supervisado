@@ -24,6 +24,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.linear_model import LogisticRegression
+from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix, plot_confusion_matrix
@@ -163,13 +164,6 @@ df_train["EverTravelledAbroad"].value_counts()
 sns.countplot(data=df_train, x="Employment Type")
 
 # %% [markdown]
-# Para el entrenamiento de los modelos no utilizaremos las variable Customer y Travel Insurance (Target)
-
-# %% tags=[]
-X_train_total = df_train.drop(["Customer","TravelInsurance"], axis=1)
-Y_train_total = df_train["TravelInsurance"]
-
-# %% [markdown]
 # ### Variable explicativa: Family Members
 # %%
 df_train.columns
@@ -207,118 +201,83 @@ sns.countplot(data=df_train, x="TravelInsurance", hue=df_train.EverTravelledAbro
 pd.crosstab(df_train["TravelInsurance"], df_train["EverTravelledAbroad"])
 # %% [markdown]
 # ## Encoding variables
-
-# %% tags=[]
-numerical_cols = X_train_total.select_dtypes(include=['float64', 'int64']).columns
-
-# %%
-numerical_cols
-
-# %%
-categorical_cols = X_train_total.select_dtypes(include=['object']).columns
-
-# %%
-categorical_cols
-
-# %%
-from sklearn.preprocessing import OneHotEncoder
-from sklearn import feature_extraction
-
-features = list(X_train_total.T.to_dict().values())
-
-vectorizer = feature_extraction.DictVectorizer()
-X_train_enc = vectorizer.fit_transform(features).todense()
-# encoder = OneHotEncoder(sparse=False)
-# encoder.fit(X_train_total[categorical_cols])
-# # We can inspect the categories found by the encoder
-# encoder.categories_
-# # %%
-# encoded_types = encoder.transform(X_train_total[categorical_cols])
-# encoded_types[:10]
-#
-# # %%
-# X_train_num = X_train_total[numerical_cols].values
-# X_train_num[:10]
-#
-# # %%
-# X_train_enc = np.hstack((encoded_types, X_train_num))
-# X_train_enc [:5]
-#
-# # %%
-# X_train_enc.shape
-
 # %% [markdown]
 # ## Creación del train y validation
-
+# Para el entrenamiento de los modelos no utilizaremos las variable Customer y
+# Travel Insurance (Target)
 # %%
-X_train, X_valid, Y_train, Y_valid = train_test_split(X_train_enc,
-                                                      Y_train_total,
+seed = 0
+
+X_train_total = df_train.drop(["Customer","TravelInsurance"], axis=1)
+y_train_total = df_train["TravelInsurance"]
+# %%
+X_train, X_valid, y_train, y_valid = train_test_split(X_train_total,
+                                                      y_train_total,
                                                       test_size=0.2,
-                                                      random_state=0)
+                                                      random_state=seed)
+X_test = df_test.drop("Customer", axis=1)
 # %% [markdown]
 # ## Modelos propuestos
-
 # %% [markdown]
 # ## Primer modelo de prueba: Regresión Logística
+numerical_cols = X_train_total.select_dtypes(
+    include=['float64', 'int64']).columns
+
+categorical_cols = X_train_total.select_dtypes(include=['object']).columns
+
+vars_to_scale = ["Age", "AnnualIncome", "FamilyMembers"]
+
+preprocessor = ColumnTransformer(
+    [("encoder", OneHotEncoder(), categorical_cols),
+     ("scaler", StandardScaler(), vars_to_scale)],
+    remainder="passthrough")
+
+pipe_lgr = Pipeline([
+    ("preprocessor", preprocessor),
+    ("model", LogisticRegression(random_state=seed))
+])
+pipe_lgr.fit(X_train, y_train)
+# %%
+# %%
+pipe_lgr["model"].classes_
 
 # %%
-#X_train_lreg = X_train_enc[np.concatenate((num_cols,cat_cols))]
-#X_val_lreg = X_val_c[np.concatenate((num_cols,cat_cols))]
-
-pipe = Pipeline([('scaler', StandardScaler()), ('lreg', LogisticRegression(random_state=0))])
-
-pipe.fit(X_train, Y_train)
+pipe_lgr["model"].get_params()
 
 # %%
-pipe['lreg'].classes_
-
-# %%
-pipe['lreg'].get_params()
-
-# %%
-Y_train_predic_lreg = pipe.predict(X_train)
-Y_val_pred_lreg = pipe.predict(X_valid)
+y_train_pred_lreg = pipe_lgr.predict(X_train)
+y_val_pred_lreg = pipe_lgr.predict(X_valid)
+y_test_pred_lreg = pipe_lgr.predict(X_test)
 
 # %%
 text = "Logistic Regression - Reporte de clasificación del conjunto de train"
 print(len(text)*"=")
 print(text)
 print(len(text)*"=")
-print(classification_report(Y_train, Y_train_predic_lreg))
+print(classification_report(y_train, y_train_pred_lreg))
 
 # %%
 text = "Logistic Regression - Reporte de clasificación del conjunto de validation"
 print(len(text)*"=")
 print(text)
 print(len(text)*"=")
-print(classification_report(Y_valid, Y_val_pred_lreg))
+print(classification_report(y_valid, y_val_pred_lreg))
 
 # %% [markdown]
 # ## Segundo modelo de prueba: Árbol de decisión
 
 # %%
-clf_tree = DecisionTreeClassifier(random_state=0)
-clf_tree.fit(X_train, Y_train)
-
+pipe_dtree = Pipeline([
+    ("preprocessor", preprocessor),
+    ("model", DecisionTreeClassifier(random_state=seed))
+])
+pipe_dtree.fit(X_train, y_train)
 # %%
-Y_train_pred = clf_tree.predict(X_train)
-Y_valid_pred = clf_tree.predict(X_valid)
-
+y_train_pred_dtree = pipe_dtree.predict(X_train)
+y_valid_pred_dtree = pipe_dtree.predict(X_valid)
+y_test_pred_dtree = pipe_lgr.predict(X_test)
 # %%
-train_acc = accuracy_score(Y_train, Y_train_pred)
-valid_acc = accuracy_score(Y_valid, Y_valid_pred)
+train_acc = accuracy_score(y_train, y_train_pred_dtree)
+valid_acc = accuracy_score(y_valid, y_valid_pred_dtree)
 print(f'Train accuracy: {train_acc:0.2}')
-print(f'Test accuracy: {valid_acc:0.2}')
-
-# %% [markdown]
-# ## SVM
-# %%
-from sklearn.svm import SVC
-
-scaler = StandardScaler()
-vars_to_scale = ["Age", "AnnualIncome", "FamilyMembers"]
-X_train_df = pd.DataFrame(X_train, columns=vectorizer.get_feature_names())
-X_valid_df = pd.DataFrame(X_valid, columns=vectorizer.get_feature_names())
-# %%
-X_train_df[vars_to_scale] = scaler.fit_transform(X_train_df[vars_to_scale])
-X_valid_df[vars_to_scale] = scaler.fit_transform(X_valid_df[vars_to_scale])
+print(f'Val accuracy: {valid_acc:0.2}')
