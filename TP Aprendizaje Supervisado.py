@@ -74,7 +74,7 @@ sns.countplot(data=df_train, x="TravelInsurance")
 # ### Correlación variables
 
 # %%
-corr = df_train[["AnnualIncome", "Age"]].corr().round(2)
+corr = df_train[["TravelInsurance","AnnualIncome", "Age"]].corr().round(2)
 corr = corr[['TravelInsurance']]
 corr.loc[:, 'abs_corr'] = np.abs(corr['TravelInsurance'])
 corr.sort_values(by='abs_corr', ascending=False)
@@ -220,34 +220,38 @@ categorical_cols = X_train_total.select_dtypes(include=['object']).columns
 # %%
 categorical_cols
 
-# %% tags=[]
+# %%
 from sklearn.preprocessing import OneHotEncoder
+from sklearn import feature_extraction
 
-encoder = OneHotEncoder(sparse=False)
-encoder.fit(X_train_total[categorical_cols])
-# We can inspect the categories found by the encoder
-encoder.categories_
+features = list(X_train_total.T.to_dict().values())
 
-# %%
-encoded_types = encoder.transform(X_train_total[categorical_cols])
-encoded_types[:10]
-
-# %%
-X_train_total = X_train_total[numerical_cols].values
-X_train_total[:10]
-
-# %%
-X_train_enc = np.hstack((encoded_types, X_train_total))
-X_train_enc [:5]
-
-# %%
-X_train_enc.shape
+vectorizer = feature_extraction.DictVectorizer()
+X_train_enc = vectorizer.fit_transform(features).todense()
+# encoder = OneHotEncoder(sparse=False)
+# encoder.fit(X_train_total[categorical_cols])
+# # We can inspect the categories found by the encoder
+# encoder.categories_
+# # %%
+# encoded_types = encoder.transform(X_train_total[categorical_cols])
+# encoded_types[:10]
+#
+# # %%
+# X_train_num = X_train_total[numerical_cols].values
+# X_train_num[:10]
+#
+# # %%
+# X_train_enc = np.hstack((encoded_types, X_train_num))
+# X_train_enc [:5]
+#
+# # %%
+# X_train_enc.shape
 
 # %% [markdown]
 # ## Creación del train y validation
 
 # %%
-X_train, X_valid, Y_train, Y_valid = train_test_split(X_train_total,
+X_train, X_valid, Y_train, Y_valid = train_test_split(X_train_enc,
                                                       Y_train_total,
                                                       test_size=0.2,
                                                       random_state=0)
@@ -305,3 +309,16 @@ train_acc = accuracy_score(Y_train, Y_train_pred)
 valid_acc = accuracy_score(Y_valid, Y_valid_pred)
 print(f'Train accuracy: {train_acc:0.2}')
 print(f'Test accuracy: {valid_acc:0.2}')
+
+# %% [markdown]
+# ## SVM
+# %%
+from sklearn.svm import SVC
+
+scaler = StandardScaler()
+vars_to_scale = ["Age", "AnnualIncome", "FamilyMembers"]
+X_train_df = pd.DataFrame(X_train, columns=vectorizer.get_feature_names())
+X_valid_df = pd.DataFrame(X_valid, columns=vectorizer.get_feature_names())
+# %%
+X_train_df[vars_to_scale] = scaler.fit_transform(X_train_df[vars_to_scale])
+X_valid_df[vars_to_scale] = scaler.fit_transform(X_valid_df[vars_to_scale])
