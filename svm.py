@@ -39,5 +39,5 @@ best_model = make_pipeline(
         }))
 best_model.fit(X_train_total, y_train_total)
 # %%
-save_predictions(clf.best_estimator_, "svm.csv")
+save_predictions(best_model, "svm.csv")
 # %%
