@@ -27,7 +27,7 @@ preprocessor = ColumnTransformer(
     [("discretizer",
       KBinsDiscretizer(n_bins=5, encode="ordinal",
                        strategy="quantile"), ["Age", "AnnualIncome"]),
-     ("scaler",
+     ("encoder",
       OneHotEncoder(categories="auto", dtype="int", handle_unknown="ignore"), [
           "Employment Type", "GraduateOrNot", "FamilyMembers", "FrequentFlyer",
           "EverTravelledAbroad"
