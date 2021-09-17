@@ -7,3 +7,4 @@ dependencies:
   - matplotlib
   - seaborn=0.11
   - scikit-learn
+  - xgboost
