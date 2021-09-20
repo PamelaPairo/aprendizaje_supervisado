@@ -1,18 +1,11 @@
 # %%
-from utils import (make_pipeline, X_train, X_val, save_predictions, y_train,
-                   y_val, X_train_total, y_train_total)
-from sklearn.metrics import classification_report
+from utils import (make_pipeline, save_predictions, X_train_total,
+                   y_train_total)
 from xgboost import XGBClassifier
-
 from skopt import BayesSearchCV
 from skopt.space import Real, Categorical, Integer
 # %%
 pipe = make_pipeline(XGBClassifier())
-# %%
-pipe.fit(X_train, y_train)
-y_val_pred = pipe.predict(X_val)
-# %%
-print(classification_report(y_val, y_val_pred))
 # %% [markdown]
 # ## Fine Tunning
 # %%
@@ -30,9 +23,8 @@ params_bayes = {
     "model__eval_metric": Categorical(["logloss"]),
     "model__use_label_encoder": Categorical([False]),
 }
-opt = BayesSearchCV(pipe, params_bayes)
-# Works better if we tune using all the training data.
+opt = BayesSearchCV(pipe, params_bayes, scoring="f1")
 opt.fit(X_train_total, y_train_total)
 # %%
-save_predictions(opt.best_estimator_, "xgboost.csv")
+save_predictions(opt.best_estimator_, "xgb.csv")
 # %%
