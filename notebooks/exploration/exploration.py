@@ -13,7 +13,9 @@
 # ---
 
 # %% [markdown]
-# # APRENDIZAJE SUPERVISADO
+# Diplomatura en Ciencias de Datos, Aprendizaje Automático y sus Aplicaciones
+#
+# Autores: Matías Oria, Antonela Sambuceti, Pamela Pairo, Benjamín Ocampo
 
 # %% [markdown]
 # ## Importación de librerias
