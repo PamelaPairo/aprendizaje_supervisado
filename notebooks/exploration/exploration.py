@@ -85,7 +85,7 @@ df_train[["TravelInsurance", "Age"]].groupby("TravelInsurance").describe()
 # ### Variable explicativa: AnnualIncome
 
 # %% [markdown]
-# En primer lugar, observamos la distribución de la variable Annual Income en el df_train.
+# En segundo lugar, observamos la distribución de la variable Annual Income en el df_train.
 
 # %%
 fig = plt.figure(figsize=(8, 8))
